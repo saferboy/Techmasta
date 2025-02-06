@@ -1,0 +1,368 @@
+// schema.prisma
+
+// generator client {
+//   provider        = "prisma-client-js"
+//   previewFeatures = ["fullTextSearch", "fullTextIndex"]
+// }
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Region {
+  id        Int      @id @default(autoincrement())
+  name      String   @db.VarChar(100)
+  code      String   @unique @db.VarChar(10)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  isDeleted Boolean  @default(false)
+
+  // Relations
+  districts     District[]
+  shippingZones ShippingService[]
+  users         User[]
+
+  @@index([name])
+  @@map("regions")
+}
+
+model District {
+  id        Int      @id @default(autoincrement())
+  name      String   @db.VarChar(100)
+  code      String   @unique @db.VarChar(10)
+  regionId  Int
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  isDeleted Boolean  @default(false)
+
+  // Relations
+  region Region @relation(fields: [regionId], references: [id])
+  users  User[]
+
+  @@index([name, regionId])
+  @@map("districts")
+}
+
+model User {
+  id          Int        @id @default(autoincrement())
+  fullName    String     @db.VarChar(100)
+  username    String     @unique @db.VarChar(50)
+  password    String
+  phone       String?    @unique @db.VarChar(20)
+  avatar      String?    @db.Text
+  bio         String?    @db.Text
+  dateOfBirth DateTime?
+  role        Role       @default(user)
+  status      UserStatus @default(ACTIVE)
+  lastLoginAt DateTime?
+  regionId    Int?
+  districtId  Int?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  // Relations
+  region      Region?    @relation(fields: [regionId], references: [id])
+  district    District?  @relation(fields: [districtId], references: [id])
+  orders      Order[]
+  reviews     Review[]
+  posts       Post[]
+
+  @@index([username, phone])
+  @@map("users")
+}
+
+enum Role {
+  user
+  admin
+  superadmin
+  manager
+  support
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  BANNED
+}
+
+model Post {
+  id          Int        @id @default(autoincrement())
+  slug        String     @unique @db.VarChar(255)
+  title       String     @db.VarChar(255)
+  description String     @db.Text
+  content     String     @db.Text
+  video       String?    @db.Text
+  poster      String     @db.Text
+  status      PostStatus @default(DRAFT)
+  viewCount   Int        @default(0)
+  tags        String[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  // Relations
+  products Product[]
+  author   User?     @relation(fields: [authorId], references: [id])
+  authorId Int?
+
+  @@index([slug, status])
+  @@map("posts")
+}
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model Category {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique @db.VarChar(100)
+  slug        String   @unique @db.VarChar(100)
+  description String   @db.Text
+  poster      String   @db.Text
+  order       Int      @default(0)
+  parentId    Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  products Product[]
+  parent   Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryHierarchy")
+
+  @@index([slug, name])
+  @@map("categories")
+}
+
+model Product {
+  id           Int           @id @default(autoincrement())
+  name         String        @db.VarChar(255)
+  slug         String        @unique @db.VarChar(255)
+  description  String        @db.Text
+  price        Float
+  comparePrice Float?
+  costPrice    Float?
+  stock        Int           @default(0)
+  poster       String        @db.Text
+  status       ProductStatus @default(DRAFT)
+  productType  ProductType   @default(HARDWARE)
+  weight       Float?
+  categoryId   Int
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  // Relations
+  category       Category             @relation(fields: [categoryId], references: [id])
+  information    ProductInformation[]
+  images         ProductImage[]
+  posts          Post[]
+  orderItems     OrderItem[]
+  discountRule   DiscountRule?        @relation(fields: [discountRuleId], references: [id])
+  discountRuleId Int?
+  reviews        Review[]
+
+  @@index([slug, status, productType])
+  @@map("products")
+}
+
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  OUTOFSTOCK
+  DISCONTINUED
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  productId Int
+  userId    Int
+  rating    Int      @db.SmallInt
+  comment   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  isDeleted Boolean  @default(false)
+
+  // Relations
+  product Product @relation(fields: [productId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@unique([productId, userId])
+  @@map("reviews")
+}
+
+model DiscountRule {
+  id              Int          @id @default(autoincrement())
+  name            String       @db.VarChar(100)
+  description     String?      @db.Text
+  discountValue   Float
+  discountType    DiscountType @default(PERCENTAGE)
+  minimumQuantity Int          @default(1)
+  startDate       DateTime?
+  endDate         DateTime?
+  isActive        Boolean      @default(true)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  isDeleted       Boolean      @default(false)
+
+  // Relations
+  products Product[]
+
+  @@index([isActive, startDate, endDate])
+  @@map("discount_rules")
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED
+}
+
+model ProductImage {
+  id        Int      @id @default(autoincrement())
+  productId Int
+  url       String   @db.Text
+  alt       String?  @db.VarChar(255)
+  createdAt DateTime @default(now())
+  isDeleted Boolean  @default(false)
+
+  // Relations
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_images")
+}
+
+model ProductInformation {
+  id        Int      @id @default(autoincrement())
+  productId Int?
+  name      String   @db.VarChar(100)
+  value     String   @db.Text
+  createdAt DateTime @default(now())
+  isDeleted Boolean  @default(false)
+
+  // Relations
+  product Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_information")
+}
+
+enum ProductType {
+  SOFTWARE
+  HARDWARE
+}
+
+model Order {
+  id                Int            @id @default(autoincrement())
+  orderNumber       String         @unique @db.VarChar(50)
+  userId            Int
+  subtotal          Float
+  total             Float
+  paymentStatus     PaymentStatus  @default(PENDING)
+  deliveryStatus    DeliveryStatus @default(PENDING)
+  shippingServiceId Int
+  notes             String?        @db.Text
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  // Relations
+  user            User            @relation(fields: [userId], references: [id])
+  shippingService ShippingService @relation(fields: [shippingServiceId], references: [id])
+  items           OrderItem[]
+  transactions    Transaction[]
+
+  @@index([orderNumber, paymentStatus, deliveryStatus])
+  @@map("orders")
+}
+
+model Transaction {
+  id            Int           @id @default(autoincrement())
+  orderId       Int
+  amount        Float
+  paymentMethod PaymentMethod
+  status        PaymentStatus @default(PENDING)
+  reference     String?       @db.VarChar(255)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  isDeleted     Boolean       @default(false)
+
+  // Relations
+  order Order @relation(fields: [orderId], references: [id])
+
+  @@map("transactions")
+}
+
+enum PaymentMethod {
+  PAYME
+}
+
+model OrderItem {
+  id                    Int           @id @default(autoincrement())
+  orderId               Int
+  productId             Int
+  quantity              Int
+  priceAtTime           Float
+  discountAtTime        Float?
+  minimumQuantityAtTime Int?
+  discountType          DiscountType?
+  subtotal              Float
+
+  // Relations
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@map("order_items")
+}
+
+enum DeliveryStatus {
+  PENDING
+  PROCESSING
+  PACKED
+  SHIPPED
+  DELIVERING
+  DELIVERED
+  CANCELED
+  RETURNED
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  PAID
+  FAILED
+  REFUNDED
+  CANCELED
+}
+
+model ShippingService {
+  id            Int      @id @default(autoincrement())
+  name          String   @db.VarChar(100)
+  description   String?  @db.Text
+  address       String?  @db.Text
+  price         Float
+  unit          String
+  estimatedDays Int      @default(1)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  regions Region[]
+  orders  Order[]
+
+  @@map("shipping_services")
+}
+
+// Audit logging
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int?
+  action    String
+  entity    String
+  entityId  Int
+  oldData   Json?
+  newData   Json?
+  createdAt DateTime @default(now())
+
+  @@index([action, entity, entityId])
+  @@map("audit_logs")
+}

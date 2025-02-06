@@ -1,0 +1,62 @@
+services:
+  backend:
+    container_name: backend-techmasta
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    env_file:
+      - ./backend/.env_example
+    ports:
+      - "3022:3022"
+    volumes:
+      - ./backend:/app
+      # Ensure /app/node_modules is not overridden by the host's node_modules
+      - /app/node_modules
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - techmasta-network
+
+  admin:
+    container_name: admin-techmasta
+    build:
+      context: ./admin
+      dockerfile: Dockerfile
+    env_file:
+      - ./admin/.env.development
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    networks:
+      - techmasta-network
+
+  postgres:
+    image: postgres:15
+    container_name: postgres-techmasta
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1234
+      POSTGRES_DB: techmasta
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - techmasta-network
+
+  redis:
+    image: redis:latest
+    container_name: redis-techmasta
+    ports:
+      - "6379:6379"
+    networks:
+      - techmasta-network
+
+volumes:
+  postgres_data:
+
+networks:
+  techmasta-network:
+    driver: bridge

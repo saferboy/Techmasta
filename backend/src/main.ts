@@ -35,6 +35,7 @@ async function bootstrap() {
 bootstrap()
   .then((port) => {
     Logger.log('Server is running on host: http://localhost:' + port);
+    console.log(`Server running on port ${port}`);
   })
   .catch((e) => {
     console.log(e);

@@ -12,14 +12,12 @@ config();
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   app.setGlobalPrefix('api/v1');
-  const isProd = process.env.NODE_ENV === 'production';
+  // const isProd = process.env.NODE_ENV === 'production';
   // app.use(cookieParser());
   app.enableCors({
     credentials: true,
-    origin: isProd ? 'https://techmasta.uz' : true,
+    // origin: isProd ? 'https://techmasta.uz' : true,
   });
-  // app.useGlobalFilters(new PrismaClientExceptionFilter());
-  // app.useGlobalInterceptors(new BigIntInterceptor());
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -35,7 +33,6 @@ async function bootstrap() {
 bootstrap()
   .then((port) => {
     Logger.log('Server is running on host: http://localhost:' + port);
-    console.log(`Server running on port ${port}`);
   })
   .catch((e) => {
     console.log(e);

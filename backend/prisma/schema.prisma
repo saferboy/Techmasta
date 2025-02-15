@@ -1,9 +1,6 @@
-// schema.prisma
-
-// generator client {
-//   provider        = "prisma-client-js"
-//   previewFeatures = ["fullTextSearch", "fullTextIndex"]
-// }
+generator client {
+  provider = "prisma-client-js"
+}
 
 datasource db {
   provider = "postgresql"
@@ -74,9 +71,9 @@ model User {
 }
 
 enum Role {
+  superadmin
   user
   admin
-  superadmin
   manager
   support
 }

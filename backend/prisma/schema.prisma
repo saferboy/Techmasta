@@ -1,5 +1,3 @@
-// schema.prisma
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -73,9 +71,9 @@ model User {
 }
 
 enum Role {
+  superadmin
   user
   admin
-  superadmin
   manager
   support
 }

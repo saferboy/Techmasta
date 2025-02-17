@@ -1,4 +1,4 @@
-import { Get, Inject, Injectable, NotFoundException, Req, UnauthorizedException } from "@nestjs/common";
+import { Get, Inject, Injectable, NotFoundException, Req, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../../common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
@@ -6,7 +6,7 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { LoginDto } from './dto/login.dto';
 import * as bcrypt from 'bcrypt';
-import { ProtectedRoute } from "../../common/decorator/protect-route.decorator";
+import { ProtectedRoute } from '../../common/decorator/protect-route.decorator';
 
 @Injectable()
 export class AuthService {

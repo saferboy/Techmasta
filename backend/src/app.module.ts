@@ -8,11 +8,13 @@ import * as redisStore from 'cache-manager-redis-store';
 import { APP_GUARD } from '@nestjs/core';
 import { RoleGuard } from './common/guards/role.guard';
 import { AuthGuard } from './common/guards/auth.guard';
+import { PostModule } from './modules/post/post.module';
 
 @Module({
   imports: [
     AuthModule,
     PrismaModule,
+    PostModule,
     ConfigModule.forRoot({
       isGlobal: true,
     }),

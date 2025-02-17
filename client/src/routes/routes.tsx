@@ -1,9 +1,9 @@
 import { createBrowserRouter } from "react-router-dom";
-import { Home } from "./lazy.pages";
+import { Cart, Home } from "./lazy.pages";
 
 export const router = createBrowserRouter([
   {
-    path: "/auth/login",
+    path: "/login",
     // element: (
     //   <Suspense>
     //     <Login />
@@ -16,15 +16,14 @@ export const router = createBrowserRouter([
     children: [
       {
         path: "/",
-        // element: <Layout />,
         children: [
           {
             index: true,
-            element: (
-              //   <Suspense>
-              <Home />
-              //   </Suspense>
-            ),
+            element: <Home />,
+          },
+          {
+            path: "/cart-page",
+            element: <Cart />,
           },
         ],
       },

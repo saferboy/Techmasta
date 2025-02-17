@@ -8,6 +8,10 @@ import * as redisStore from 'cache-manager-redis-store';
 import { APP_GUARD } from '@nestjs/core';
 import { RoleGuard } from './common/guards/role.guard';
 import { AuthGuard } from './common/guards/auth.guard';
+import { CategoryModule } from './modules/category/category.module';
+import { RegionModule } from './modules/region/region.module';
+import { DistrictModule } from './modules/district/district.module';
+import { ProductModule } from './modules/product/product.module';
 
 @Module({
   imports: [
@@ -38,6 +42,10 @@ import { AuthGuard } from './common/guards/auth.guard';
       },
       inject: [ConfigService],
     }),
+    CategoryModule,
+    RegionModule,
+    DistrictModule,
+    ProductModule,
   ],
   providers: [
     {

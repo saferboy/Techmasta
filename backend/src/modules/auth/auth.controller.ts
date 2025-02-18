@@ -25,6 +25,22 @@ export class AuthController {
   @ProtectedRoute({
     isPublic: true,
   })
+  @Post('signin')
+  async signin(@Body() signinDto: LoginDto) {
+    return this.authService.sigin(signinDto);
+  }
+
+  @ProtectedRoute({
+    isPublic: true,
+  })
+  @Post('verifyOTP')
+  async verifyOTP(@Body() body: { otp: string; phone: string }) {
+    return this.authService.verifyOTP(body);
+  }
+
+  @ProtectedRoute({
+    isPublic: true,
+  })
   @Get('refresh')
   async refresh(@Req() req: Request, @Res() res: Response) {
     const refresh = req.cookies['refreshToken'];

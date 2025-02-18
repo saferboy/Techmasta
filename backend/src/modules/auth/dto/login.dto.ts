@@ -4,7 +4,7 @@ export class LoginDto {
   @IsNotEmpty()
   @IsString()
   @Length(3, 100)
-  username: string;
+  phone: string;
 
   @Length(3, 100)
   @IsNotEmpty()

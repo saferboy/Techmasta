@@ -12,11 +12,13 @@ import { CategoryModule } from './modules/category/category.module';
 import { RegionModule } from './modules/region/region.module';
 import { DistrictModule } from './modules/district/district.module';
 import { ProductModule } from './modules/product/product.module';
+import { PostModule } from './modules/post/post.module';
 
 @Module({
   imports: [
     AuthModule,
     PrismaModule,
+    PostModule,
     ConfigModule.forRoot({
       isGlobal: true,
     }),

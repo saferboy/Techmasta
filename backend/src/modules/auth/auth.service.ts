@@ -1,4 +1,13 @@
-import { Get, Inject, Injectable, NotFoundException, Req, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Get,
+  Inject,
+  Injectable,
+  NotFoundException,
+  Req,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { PrismaService } from '../../common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
@@ -7,6 +16,7 @@ import { Cache } from 'cache-manager';
 import { LoginDto } from './dto/login.dto';
 import * as bcrypt from 'bcrypt';
 import { ProtectedRoute } from '../../common/decorator/protect-route.decorator';
+import { ApiResponse } from 'src/common/helpers/apiResponse';
 
 @Injectable()
 export class AuthService {
@@ -17,13 +27,48 @@ export class AuthService {
     @Inject(CACHE_MANAGER) private readonly cacheService: Cache,
   ) {}
 
+  async sigin({ password, phone }: LoginDto) {
+    const checkUser = await this.prismaService.user.findUnique({ where: { phone } });
+    if (checkUser) throw new NotFoundException('bunaqa raqamli faydolanuvchi bor');
+
+    const hashPassword = await bcrypt.hash(password, 10);
+    await this.prismaService.user.create({ data: { password: hashPassword, phone, status: 'INACTIVE' } });
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    await this.cacheService.set(`otp-${phone}`, otp, 300000);
+
+    console.log(otp);
+
+    return new ApiResponse('faydolanuvchi otp tastiklang');
+  }
+
+  async verifyOTP({ phone, otp }: { phone: string; otp: string }) {
+    const user = await this.prismaService.user.findFirst({ where: { phone, status: 'INACTIVE' } });
+    if (!user) throw new NotFoundException('Foydalanuvchi topilmadi yokiy tastiklangan');
+
+    const checkOtp = await this.cacheService.get<string>(`otp-${phone}`);
+    if (!checkOtp) throw new ConflictException('OTP muddati tugadi');
+
+    if (otp !== checkOtp) throw new BadRequestException("Noto'g'ri OTP");
+
+    await this.prismaService.user.update({
+      where: { id: user.id },
+      data: { status: 'ACTIVE' },
+    });
+
+    await this.cacheService.del(`otp-${phone}`);
+
+    return new ApiResponse('Foydalanuvchi muvaffaqiyatli tasdiqlandi');
+  }
+
   @ProtectedRoute({
     isPublic: true,
   })
   async login(loginDto: LoginDto) {
     const user = await this.prismaService.user.findUnique({
       where: {
-        username: loginDto.username,
+        phone: loginDto.phone,
+        status: { not: 'INACTIVE' },
       },
     });
 

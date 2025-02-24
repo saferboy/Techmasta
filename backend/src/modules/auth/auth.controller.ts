@@ -3,6 +3,7 @@ import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { Request, Response } from 'express';
 import { ProtectedRoute } from '../../common/decorator/protect-route.decorator';
+import { resendVerifyOtp, verifyOTP } from './dto/verify.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -25,17 +26,22 @@ export class AuthController {
   @ProtectedRoute({
     isPublic: true,
   })
-  @Post('signin')
-  async signin(@Body() signinDto: LoginDto) {
-    return this.authService.sigin(signinDto);
+  @Post('register')
+  async register(@Body() signinDto: LoginDto) {
+    return this.authService.register(signinDto);
   }
 
   @ProtectedRoute({
     isPublic: true,
   })
-  @Post('verifyOTP')
-  async verifyOTP(@Body() body: { otp: string; phone: string }) {
+  @Post('confirmation')
+  async verifyOTP(@Body() body: verifyOTP) {
     return this.authService.verifyOTP(body);
+  }
+
+  @Post('resend-confirmation')
+  resendVerifyOtp(@Body() { phone }: resendVerifyOtp) {
+    return this.authService.resendVerifyOtp(phone);
   }
 
   @ProtectedRoute({

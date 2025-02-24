@@ -17,6 +17,7 @@ import { LoginDto } from './dto/login.dto';
 import * as bcrypt from 'bcrypt';
 import { ProtectedRoute } from '../../common/decorator/protect-route.decorator';
 import { ApiResponse } from 'src/common/helpers/apiResponse';
+import { resendVerifyOtp, verifyOTP } from './dto/verify.dto';
 
 @Injectable()
 export class AuthService {
@@ -27,7 +28,7 @@ export class AuthService {
     @Inject(CACHE_MANAGER) private readonly cacheService: Cache,
   ) {}
 
-  async sigin({ password, phone }: LoginDto) {
+  async register({ password, phone }: LoginDto) {
     const checkUser = await this.prismaService.user.findUnique({ where: { phone } });
     if (checkUser) throw new NotFoundException('bunaqa raqamli faydolanuvchi bor');
 
@@ -35,14 +36,14 @@ export class AuthService {
     await this.prismaService.user.create({ data: { password: hashPassword, phone, status: 'INACTIVE' } });
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    await this.cacheService.set(`otp-${phone}`, otp, 300000);
+    await this.cacheService.set(`otp-${phone}`, otp, 120000);
 
     console.log(otp);
 
     return new ApiResponse('faydolanuvchi otp tastiklang');
   }
 
-  async verifyOTP({ phone, otp }: { phone: string; otp: string }) {
+  async verifyOTP({ phone, otp }: verifyOTP) {
     const user = await this.prismaService.user.findFirst({ where: { phone, status: 'INACTIVE' } });
     if (!user) throw new NotFoundException('Foydalanuvchi topilmadi yokiy tastiklangan');
 
@@ -61,9 +62,18 @@ export class AuthService {
     return new ApiResponse('Foydalanuvchi muvaffaqiyatli tasdiqlandi');
   }
 
-  @ProtectedRoute({
-    isPublic: true,
-  })
+  async resendVerifyOtp(phone: string) {
+    const user = await this.prismaService.user.findUnique({ where: { phone } });
+    if (!user) throw new NotFoundException('Foydalanuvchi topilmadi');
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    await this.cacheService.set(`otp-${phone}`, otp, 120000);
+
+    console.log(otp);
+
+    return new ApiResponse('Foydalanuvchi OTP yangilandi');
+  }
+
   async login(loginDto: LoginDto) {
     const user = await this.prismaService.user.findUnique({
       where: {
@@ -97,10 +107,6 @@ export class AuthService {
     return { accessToken, refreshToken };
   }
 
-  @ProtectedRoute({
-    isPublic: false,
-  })
-  @Get('verify')
   async verify(@Req() req: Request) {
     const { id, role } = req['user'];
     return {
